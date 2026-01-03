@@ -1,6 +1,9 @@
 import FeatureCard from "@/components/FeatureCard"
 import LoginBtn from "@/components/LoginBtn"
 
+// Note: Pageview tracking is handled automatically by PostHog with defaults: '2025-05-24'
+// The automatic $pageview event will capture visits to this page
+
 const features = [
   { image: '/images/event1.png', title: "feature 1"},
   { image: '/images/event2.png', title: "feature 2"},
@@ -16,7 +19,7 @@ const Home = () => {
       <LoginBtn/>
       <div className="mt-20 space-y-7">
         <h3>Features</h3>
-        
+
         <ul className="features">
           {features.map((feature) => (
             <li key={feature.title}>
