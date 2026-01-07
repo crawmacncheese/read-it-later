@@ -2,16 +2,30 @@ package com.crawmacncheese.spring_boot;
 
 import java.util.Objects;
 
-public class User {
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+
+
+@Entity
+public class AppUser {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private String username;
     private String password;
 
-    public User(Integer id, String password, String username) {
-        this.id = id;
-        this.password = password;
-        this.username = username;
+    public AppUser() {
     }
+
+    public AppUser(Integer id, String username, String password) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+    }
+
 
     public Integer getId() {
         return id;
@@ -57,7 +71,7 @@ public class User {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final User other = (User) obj;
+        final AppUser other = (AppUser) obj;
         if (!Objects.equals(this.username, other.username)) {
             return false;
         }
