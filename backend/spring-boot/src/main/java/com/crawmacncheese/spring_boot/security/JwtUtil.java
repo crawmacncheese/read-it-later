@@ -1,42 +1,43 @@
 package com.crawmacncheese.spring_boot.security;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Date;
 import java.util.function.Function;
 
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Component
 public class JwtUtil {
 
-    public static final String SECRET_KEY = "5367566859703373367639792F423F452848284D6251655468576D5A71347437";
+    private final JwtProperties jwtProperties;
+    private final SecretKey signInKey;
 
-    // public String generateToken(String email) { // Use email as username
-    //     Map<String, Object> claims = new HashMap<>();
-    //     return createToken(claims, email);
-    // }
+    public JwtUtil(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+        byte[] keyBytes = jwtProperties.secret().getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException(
+                    "jwt.secret must be at least 32 bytes for HS256 (set JWT_SECRET or jwt.secret in application.properties)");
+        }
+        this.signInKey = Keys.hmacShaKeyFor(keyBytes);
+    }
 
     public String generateToken(UserDetails userDetails) {
+        long expMs = jwtProperties.expirationMs();
         return Jwts.builder()
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
-                .signWith(getSignInKey())
+                .expiration(new Date(System.currentTimeMillis() + expMs))
+                .signWith(signInKey)
                 .compact();
-    }
-
-    private SecretKey getSignInKey() {
-        byte[] bytes = Base64.getDecoder()
-        .decode(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
-                return new SecretKeySpec(bytes, "HmacSHA256"); 
     }
 
     public String extractUsername(String token) {
@@ -52,12 +53,12 @@ public class JwtUtil {
         return claimsResolver.apply(claims);
     }
 
-    private Claims extractAllClaims(String token){
+    private Claims extractAllClaims(String token) {
         return Jwts.parser()
-        .verifyWith(getSignInKey())
-        .build()
-        .parseSignedClaims(token)
-        .getPayload();
+                .verifyWith(signInKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private Boolean isTokenExpired(String token) {

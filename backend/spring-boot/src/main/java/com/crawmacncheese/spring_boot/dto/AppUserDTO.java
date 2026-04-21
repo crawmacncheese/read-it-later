@@ -1,6 +1,7 @@
 package com.crawmacncheese.spring_boot.dto;
 
 import com.crawmacncheese.spring_boot.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Data;
 import lombok.Getter;
@@ -14,6 +15,7 @@ public class AppUserDTO {
     private Integer id;
     private String username;
     private String email;
+    @JsonIgnore
     private String password;
     private String roles;
 

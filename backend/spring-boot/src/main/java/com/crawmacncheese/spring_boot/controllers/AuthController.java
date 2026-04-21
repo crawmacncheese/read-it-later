@@ -10,12 +10,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.crawmacncheese.spring_boot.AllArgsConstructor;
+import com.crawmacncheese.spring_boot.dto.AuthResponse;
 import com.crawmacncheese.spring_boot.dto.AppUserDTO;
+import com.crawmacncheese.spring_boot.dto.LoginRequest;
+import com.crawmacncheese.spring_boot.dto.RegisterRequest;
 import com.crawmacncheese.spring_boot.mappers.AppUserMapper;
 import com.crawmacncheese.spring_boot.model.AppUser;
 import com.crawmacncheese.spring_boot.security.AppUserDetails;
 import com.crawmacncheese.spring_boot.security.JwtUtil;
 import com.crawmacncheese.spring_boot.service.AppUserService;
+
+import jakarta.validation.Valid;
 
 @AllArgsConstructor
 @RestController
@@ -33,41 +38,27 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AppUserDTO> register(@RequestBody Map<String, String> body) {
-        String username = body.get("username");
-        String email = body.get("email");
-        String password = body.get("password");
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest body) {
         try {
-            AppUser user = appUserService.registerUser(username, email, password);
+            AppUser user = appUserService.registerUser(body.username(), body.email(), body.password());
             AppUserDTO userDTO = appUserMapper.toDto(user);
             return ResponseEntity.status(HttpStatus.CREATED).body(userDTO);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-    
+
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> body) {
-        String username = body.get("username");
-        String password = body.get("password");
-        if (username == null || password == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Missing username or password"));
-        }
-        var userOpt = appUserService.authenticate(username, password);
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest body) {
+        var userOpt = appUserService.authenticateByEmail(body.email(), body.password());
         if (userOpt.isPresent()) {
             AppUser user = userOpt.get();
             AppUserDTO userDTO = appUserMapper.toDto(user);
             AppUserDetails userDetails = new AppUserDetails(userDTO);
             String token = jwtUtil.generateToken(userDetails);
-            Map<String, Object> response = Map.of(
-                "token", token,
-                "user", userDTO
-            );
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.ok(new AuthResponse(token, userDTO));
         }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "invalid_credentials"));
     }
-    
 
 }

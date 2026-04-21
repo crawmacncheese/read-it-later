@@ -3,7 +3,7 @@ package com.crawmacncheese.spring_boot.service;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.crawmacncheese.spring_boot.model.AppUser;
@@ -13,10 +13,11 @@ import com.crawmacncheese.spring_boot.repository.AppUserRepository;
 public class AppUserService {
 
     private final AppUserRepository appUserRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder;
 
-    public AppUserService(AppUserRepository appUserRepository) {
+    public AppUserService(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder) {
         this.appUserRepository = appUserRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public AppUser registerUser(String username, String email, String password) throws Exception {
@@ -32,18 +33,11 @@ public class AppUserService {
         user.setEmail(email);
         user.setPassword(hashedPassword);
         return appUserRepository.save(user);
-
     }
 
-    public Optional<AppUser> authenticate(String username, String password) {
-        Optional<AppUser> userOpt = appUserRepository.findByUsername(username);
-        if (userOpt.isPresent()) {
-            AppUser user = userOpt.get();
-            if (passwordEncoder.matches(password, user.getPassword())) {
-                return Optional.of(user);
-            }
-        }
-        return Optional.empty();
+    public Optional<AppUser> authenticateByEmail(String email, String password) {
+        return appUserRepository.findByEmail(email)
+                .filter(user -> passwordEncoder.matches(password, user.getPassword()));
     }
 
     public List<AppUser> getAllAppUsers() {
