@@ -30,6 +30,13 @@ const Navbar = () => {
     });
   };
 
+  const handleSignupClick = () => {
+    posthog.capture("nav_signup_clicked", {
+      destination: "/signup",
+      location: "navbar",
+    });
+  };
+
   return (
     <header>
       <nav>
@@ -60,7 +67,9 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              <Link href="/signup">Sign up</Link>
+              <Link href="/signup" onClick={handleSignupClick}>
+                Sign up
+              </Link>
               <Link href="/login" onClick={handleLoginClick}>
                 Login
               </Link>
