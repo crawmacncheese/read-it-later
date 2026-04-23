@@ -1,0 +1,13 @@
+# Use this workspace to collaborate
+workspace:
+  id: ""
+
+localResources:
+  collections:
+    - ../read-it-later-auth.postman_collection.json
+  environments:
+    - ../read-it-later.local.postman_environment.json
+
+cloudResources:
+  collections:
+    ../postman/collections/Read It Later - Auth Flow: 7193cb26-4709-4b58-a567-95061d818d12

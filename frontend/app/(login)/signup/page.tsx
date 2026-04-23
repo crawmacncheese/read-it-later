@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { useToast } from "@/components/toast-provider";
 
 export default function SignupPage() {
   const router = useRouter();
   const { register } = useAuth();
+  const { toast } = useToast();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,10 +22,17 @@ export default function SignupPage() {
     setSubmitting(true);
     try {
       await register(username, email, password);
+      toast({
+        title: "Account created",
+        message: "You can log in now.",
+        variant: "success",
+      });
       router.push("/login?registered=1");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign up failed");
+      const message = err instanceof Error ? err.message : "Sign up failed";
+      setError(message);
+      toast({ title: "Sign up failed", message, variant: "error" });
     } finally {
       setSubmitting(false);
     }

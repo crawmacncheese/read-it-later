@@ -1,0 +1,168 @@
+{
+  "info": {
+    "_postman_id": "b3d4b4d1-4c40-4a84-a4c5-7d3ddf7b4d7a",
+    "name": "Read It Later - Auth Flow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Register",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const ts = Date.now();",
+              "pm.collectionVariables.set('email', `alvin+${ts}@example.com`);",
+              "pm.collectionVariables.set('username', `alvin_${ts}`);",
+              "pm.collectionVariables.set('password', 'supersecret123');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.test('email matches', function () {",
+              "  pm.expect(json.email).to.eql(pm.collectionVariables.get('email'));",
+              "});",
+              "pm.test('password is not returned', function () {",
+              "  pm.expect(pm.response.text()).to.not.include('password');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Login (stores token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.test('token exists', function () {",
+              "  pm.expect(json.token).to.be.a('string');",
+              "  pm.expect(json.token.length).to.be.greaterThan(10);",
+              "});",
+              "pm.collectionVariables.set('token', json.token);",
+              "pm.test('user email matches', function () {",
+              "  pm.expect(json.user.email).to.eql(pm.collectionVariables.get('email'));",
+              "});",
+              "pm.test('password is not returned', function () {",
+              "  pm.expect(pm.response.text()).to.not.include('password');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "Users - Profile (authorized)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.test('email matches', function () {",
+              "  pm.expect(json.email).to.eql(pm.collectionVariables.get('email'));",
+              "});",
+              "pm.test('password is not returned', function () {",
+              "  pm.expect(pm.response.text()).to.not.include('password');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/profile",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", "profile"]
+        }
+      }
+    },
+    {
+      "name": "Users - Profile (missing token should be blocked)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 401 or 403', function () {",
+              "  pm.expect([401, 403]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/profile",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", "profile"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "email", "value": "" },
+    { "key": "username", "value": "" },
+    { "key": "password", "value": "" },
+    { "key": "token", "value": "" }
+  ]
+}
+

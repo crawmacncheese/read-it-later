@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/users/profile"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('status is 401 or 403', function () {
+        pm.expect([401, 403]).to.include(pm.response.code);
+      });
+    language: text/javascript
+order: 4000

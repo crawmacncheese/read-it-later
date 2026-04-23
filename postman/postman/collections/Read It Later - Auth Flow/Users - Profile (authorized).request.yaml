@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/users/profile"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('status is 200', function () {
+        pm.response.to.have.status(200);
+      });
+      const json = pm.response.json();
+      pm.test('email matches', function () {
+        pm.expect(json.email).to.eql(pm.collectionVariables.get('email'));
+      });
+      pm.test('password is not returned', function () {
+        pm.expect(pm.response.text()).to.not.include('password');
+      });
+    language: text/javascript
+order: 3000

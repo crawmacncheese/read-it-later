@@ -2,18 +2,20 @@ package com.crawmacncheese.spring_boot.mappers;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
 import com.crawmacncheese.spring_boot.dto.AppUserDTO;
 import com.crawmacncheese.spring_boot.model.AppUser;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "default")
 public interface AppUserMapper {
 
-    @Mapping(target = "roles", expression = "java(getRolesOrDefault(appUser.getRoles()))")
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "roles", source = "roles", qualifiedByName = "rolesOrDefault")
     AppUserDTO toDto(AppUser appUser);
 
-    // Helper method to provide default role
-    default String getRolesOrDefault(String roles) {
-        return (roles == null || roles.isEmpty()) ? "ROLE_USER" : roles;
+    @Named("rolesOrDefault")
+    default String rolesOrDefault(String roles) {
+        return (roles == null || roles.isBlank()) ? "ROLE_USER" : roles;
     }
 }

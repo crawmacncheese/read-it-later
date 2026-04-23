@@ -5,11 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { useToast } from "@/components/toast-provider";
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, user, isLoading } = useAuth();
+  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -31,11 +33,14 @@ export function LoginForm() {
       await login(email, password);
       posthog.identify(email, { email });
       posthog.capture("user_logged_in", { login_method: "email" });
+      toast({ title: "Logged in", message: "Welcome back!", variant: "success" });
       const next = searchParams.get("redirect");
       router.push(next && next.startsWith("/") ? next : "/app");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      const message = err instanceof Error ? err.message : "Login failed";
+      setError(message);
+      toast({ title: "Login failed", message, variant: "error" });
     } finally {
       setSubmitting(false);
     }

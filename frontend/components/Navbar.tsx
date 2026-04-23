@@ -4,10 +4,12 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
 import { useAuth } from "@/components/auth-provider";
+import { useToast } from "@/components/toast-provider";
 
 const Navbar = () => {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { toast } = useToast();
 
   const handleLogoClick = () => {
     posthog.capture("nav_logo_clicked", {
@@ -57,6 +59,7 @@ const Navbar = () => {
                 onClick={() => {
                   logout();
                   posthog.reset();
+                  toast({ title: "Logged out", variant: "info" });
                   router.push("/");
                   router.refresh();
                 }}

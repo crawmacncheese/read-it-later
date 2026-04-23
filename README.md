@@ -35,6 +35,16 @@ pip install -r requirements.txt
 
 ## 🛠 Usage
 TBD
+
+## Postman (Auth Flow)
+
+- Import `postman/read-it-later-auth.postman_collection.json`
+- (Optional) Import `postman/read-it-later.local.postman_environment.json`
+- Run requests in order:
+  - `Auth - Register` (generates a unique email/password)
+  - `Auth - Login (stores token)` (saves JWT into `{{token}}`)
+  - `Users - Profile (authorized)`
+  - `Users - Profile (missing token should be blocked)`
 <!-- 
 Run the app:
 

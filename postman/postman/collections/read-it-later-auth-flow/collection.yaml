@@ -1,0 +1,14 @@
+version: 3
+$kind: collection
+name: 'Read It Later - Auth Flow'
+variables:
+  - key: 'baseUrl'
+    value: 'http://localhost:8080'
+  - key: 'email'
+    value: ''
+  - key: 'username'
+    value: ''
+  - key: 'password'
+    value: ''
+  - key: 'token'
+    value: ''

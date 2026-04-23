@@ -1,0 +1,35 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "username": "{{username}}",
+      "email": "{{email}}",
+      "password": "{{password}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      const ts = Date.now();
+      pm.collectionVariables.set('email', `alvin+${ts}@example.com`);
+      pm.collectionVariables.set('username', `alvin_${ts}`);
+      pm.collectionVariables.set('password', 'supersecret123');
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('status is 201', function () {
+        pm.response.to.have.status(201);
+      });
+      const json = pm.response.json();
+      pm.test('email matches', function () {
+        pm.expect(json.email).to.eql(pm.collectionVariables.get('email'));
+      });
+      pm.test('password is not returned', function () {
+        pm.expect(pm.response.text()).to.not.include('password');
+      });
+    language: text/javascript
+order: 1000

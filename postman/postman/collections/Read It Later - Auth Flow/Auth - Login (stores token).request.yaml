@@ -1,0 +1,32 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "{{email}}",
+      "password": "{{password}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('status is 200', function () {
+        pm.response.to.have.status(200);
+      });
+      const json = pm.response.json();
+      pm.test('token exists', function () {
+        pm.expect(json.token).to.be.a('string');
+        pm.expect(json.token.length).to.be.greaterThan(10);
+      });
+      pm.collectionVariables.set('token', json.token);
+      pm.test('user email matches', function () {
+        pm.expect(json.user.email).to.eql(pm.collectionVariables.get('email'));
+      });
+      pm.test('password is not returned', function () {
+        pm.expect(pm.response.text()).to.not.include('password');
+      });
+    language: text/javascript
+order: 2000
