@@ -60,7 +60,7 @@ public class Bookmark {
 
     // Postgres: text[]; H2 (tests) supports ARRAY type as well.
     @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "tags", columnDefinition = "text[]")
+    @Column(name = "tags")
     private String[] tags;
 
     @Column(name = "priority")

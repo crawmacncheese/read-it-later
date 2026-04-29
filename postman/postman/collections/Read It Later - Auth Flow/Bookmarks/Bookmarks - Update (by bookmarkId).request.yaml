@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/bookmarks/{{bookmarkId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: text
+  content: |-
+    {
+      "title": "Updated title",
+      "tags": ["updated"],
+      "priority": 5
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('status is 200', function () {
+        pm.response.to.have.status(200);
+      });
+      const json = pm.response.json();
+      pm.test('title updated', function () {
+        pm.expect(json.title).to.eql('Updated title');
+      });
+    language: text/javascript
+order: 4000

@@ -53,6 +53,7 @@ const Navbar = () => {
           {user ? (
             <>
               <Link href="/app">App</Link>
+              <Link href="/app/library">Library</Link>
               <Link href="/app/profile">Profile</Link>
               <button
                 type="button"

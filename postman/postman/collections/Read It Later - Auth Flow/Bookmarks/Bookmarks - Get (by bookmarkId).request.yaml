@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/bookmarks/{{bookmarkId}}"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('status is 200', function () {
+        pm.response.to.have.status(200);
+      });
+      const json = pm.response.json();
+      pm.test('id matches bookmarkId', function () {
+        pm.expect(json.id).to.eql(Number(pm.collectionVariables.get('bookmarkId')));
+      });
+    language: text/javascript
+order: 3000

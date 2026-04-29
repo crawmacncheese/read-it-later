@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/api/v1/users/profile"
+url: "{{baseUrl}}/api/v1/bookmarks"
 method: GET
 scripts:
   - type: afterResponse
@@ -8,4 +8,4 @@ scripts:
         pm.expect([401, 403]).to.include(pm.response.code);
       });
     language: text/javascript
-order: 5000
+order: 7000

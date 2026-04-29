@@ -12,10 +12,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Value;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -28,7 +26,7 @@ class AuthFlowTests {
     void register_login_and_access_profile() throws Exception {
         String baseUrl = "http://localhost:" + port;
         String email = "alvin+" + System.currentTimeMillis() + "@example.com";
-        String username = "alvin";
+        String username = "alvin" + System.currentTimeMillis();
         String password = "supersecret123";
 
         HttpClient client = HttpClient.newHttpClient();

@@ -1,0 +1,27 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/bookmarks"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: text
+  content: |-
+    {
+      "url": "https://example.com/article?utm_source=postman",
+      "tags": ["reading", "java"],
+      "priority": 2
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('status is 200 or 201', function () {
+        pm.expect([200, 201]).to.include(pm.response.code);
+      });
+      const json = pm.response.json();
+      pm.test('id exists', function () {
+        pm.expect(json.id).to.be.a('number');
+      });
+      pm.collectionVariables.set('bookmarkId', json.id);
+    language: text/javascript
+order: 1000

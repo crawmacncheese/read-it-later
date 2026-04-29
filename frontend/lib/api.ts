@@ -1,4 +1,9 @@
-import type { AppUser, AuthResponse } from "@/lib/types";
+import type {
+  AppUser,
+  AuthResponse,
+  BookmarkDetail,
+  BookmarkListItem,
+} from "@/lib/types";
 
 export function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
@@ -61,4 +66,72 @@ export async function fetchProfile(token: string): Promise<AppUser> {
     throw new Error(await parseErrorMessage(res));
   }
   return res.json() as Promise<AppUser>;
+}
+
+export async function listBookmarks(token: string): Promise<BookmarkListItem[]> {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/bookmarks`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
+  return res.json() as Promise<BookmarkListItem[]>;
+}
+
+export async function createBookmark(
+  token: string,
+  input: { url: string; tags?: string[]; priority?: number }
+): Promise<BookmarkDetail> {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/bookmarks`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
+  return res.json() as Promise<BookmarkDetail>;
+}
+
+export async function getBookmark(
+  token: string,
+  id: number
+): Promise<BookmarkDetail> {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/bookmarks/${id}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
+  return res.json() as Promise<BookmarkDetail>;
+}
+
+export async function updateBookmark(
+  token: string,
+  id: number,
+  input: { title?: string; tags?: string[]; priority?: number }
+): Promise<BookmarkDetail> {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/bookmarks/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
+  return res.json() as Promise<BookmarkDetail>;
+}
+
+export async function deleteBookmark(token: string, id: number): Promise<void> {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/bookmarks/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
 }

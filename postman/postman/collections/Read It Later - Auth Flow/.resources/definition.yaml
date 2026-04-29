@@ -5,3 +5,4 @@ variables:
   username: ""
   password: ""
   token: ""
+  bookmarkId: ""

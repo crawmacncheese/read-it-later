@@ -32,4 +32,4 @@ scripts:
         pm.expect(pm.response.text()).to.not.include('password');
       });
     language: text/javascript
-order: 1000
+order: 2000

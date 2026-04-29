@@ -156,13 +156,229 @@
         }
       }
     }
+    ,
+    {
+      "name": "Bookmarks",
+      "item": [
+        {
+          "name": "Bookmarks - Create (stores bookmarkId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 201', function () {",
+                  "  pm.expect([200, 201]).to.include(pm.response.code);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('id exists', function () {",
+                  "  pm.expect(json.id).to.be.a('number');",
+                  "});",
+                  "pm.collectionVariables.set('bookmarkId', json.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com/article?utm_source=postman\",\n  \"tags\": [\"reading\", \"java\"],\n  \"priority\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookmarks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookmarks"]
+            }
+          }
+        },
+        {
+          "name": "Bookmarks - List",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookmarks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookmarks"]
+            }
+          }
+        },
+        {
+          "name": "Bookmarks - Get (by bookmarkId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('id matches bookmarkId', function () {",
+                  "  pm.expect(json.id).to.eql(Number(pm.collectionVariables.get('bookmarkId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookmarks/{{bookmarkId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookmarks", "{{bookmarkId}}"]
+            }
+          }
+        },
+        {
+          "name": "Bookmarks - Update (by bookmarkId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('title updated', function () {",
+                  "  pm.expect(json.title).to.eql('Updated title');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated title\",\n  \"tags\": [\"updated\"],\n  \"priority\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookmarks/{{bookmarkId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookmarks", "{{bookmarkId}}"]
+            }
+          }
+        },
+        {
+          "name": "Bookmarks - Delete (by bookmarkId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookmarks/{{bookmarkId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookmarks", "{{bookmarkId}}"]
+            }
+          }
+        },
+        {
+          "name": "Bookmarks - Get after delete (should be 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookmarks/{{bookmarkId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookmarks", "{{bookmarkId}}"]
+            }
+          }
+        },
+        {
+          "name": "Bookmarks - List (missing token should be blocked)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401 or 403', function () {",
+                  "  pm.expect([401, 403]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookmarks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookmarks"]
+            }
+          }
+        }
+      ]
+    }
   ],
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8080" },
     { "key": "email", "value": "" },
     { "key": "username", "value": "" },
     { "key": "password", "value": "" },
-    { "key": "token", "value": "" }
+    { "key": "token", "value": "" },
+    { "key": "bookmarkId", "value": "" }
   ]
 }
 

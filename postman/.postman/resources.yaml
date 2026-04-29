@@ -8,6 +8,8 @@ localResources:
   environments:
     - ../read-it-later.local.postman_environment.json
 
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
 cloudResources:
   collections:
-    ../postman/collections/Read It Later - Auth Flow: 7193cb26-4709-4b58-a567-95061d818d12
+    ../postman/collections/Read It Later - Auth Flow: b35915f3-21fc-463c-b55b-a96115f98754

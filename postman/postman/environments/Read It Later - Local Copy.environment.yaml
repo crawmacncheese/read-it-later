@@ -1,0 +1,5 @@
+name: Read It Later - Local Copy
+values:
+  - key: baseUrl
+    enabled: true
+    value: 'http://localhost:8080'
