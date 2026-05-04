@@ -1,0 +1,15 @@
+{
+  "name": "read-it-later-snapshot-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "snapshot": "node ./src/snapshot.js"
+  },
+  "dependencies": {
+    "single-file-cli": "^2.0.83"
+  },
+  "devDependencies": {
+    "playwright": "^1.54.0"
+  }
+}
+

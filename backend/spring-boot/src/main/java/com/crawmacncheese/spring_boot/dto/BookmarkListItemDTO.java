@@ -9,6 +9,7 @@ public record BookmarkListItemDTO(
         String title,
         List<String> tags,
         Integer priority,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String snapshotStatus
 ) {}
 

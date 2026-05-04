@@ -7,6 +7,8 @@ import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -65,6 +67,19 @@ public class Bookmark {
 
     @Column(name = "priority")
     private Integer priority;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "snapshot_status", nullable = false)
+    private SnapshotStatus snapshotStatus = SnapshotStatus.NONE;
+
+    @Column(name = "snapshot_object_key")
+    private String snapshotObjectKey;
+
+    @Column(name = "snapshot_error", columnDefinition = "text")
+    private String snapshotError;
+
+    @Column(name = "snapshot_created_at")
+    private LocalDateTime snapshotCreatedAt;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

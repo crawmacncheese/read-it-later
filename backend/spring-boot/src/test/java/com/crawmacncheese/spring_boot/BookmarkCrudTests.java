@@ -107,6 +107,27 @@ class BookmarkCrudTests {
         assertEquals(bookmarkId, JsonPath.read(getRes.body(), "$.id"));
         assertEquals(url, JsonPath.read(getRes.body(), "$.url"));
 
+        // SNAPSHOT: upload HTML then fetch it
+        String html = "<html><body><h1>Hello snapshot</h1></body></html>";
+        HttpRequest putSnapReq = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/v1/bookmarks/" + bookmarkId + "/snapshot"))
+                .header("Content-Type", MediaType.TEXT_HTML_VALUE)
+                .header("Authorization", "Bearer " + auth.token())
+                .PUT(HttpRequest.BodyPublishers.ofString(html))
+                .build();
+        HttpResponse<String> putSnapRes = client.send(putSnapReq, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, putSnapRes.statusCode(), "snapshot put response: " + putSnapRes.body());
+        assertEquals("READY", JsonPath.read(putSnapRes.body(), "$.snapshotStatus"));
+
+        HttpRequest getSnapReq = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/v1/bookmarks/" + bookmarkId + "/snapshot"))
+                .header("Authorization", "Bearer " + auth.token())
+                .GET()
+                .build();
+        HttpResponse<String> getSnapRes = client.send(getSnapReq, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, getSnapRes.statusCode(), "snapshot get response: " + getSnapRes.body());
+        assertTrue(getSnapRes.body().contains("Hello snapshot"));
+
         // UPDATE (partial)
         String updateBody = """
                 {"title":"Updated title","tags":["updated"],"priority":5}

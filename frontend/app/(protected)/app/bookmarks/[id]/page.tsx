@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { useToast } from "@/components/toast-provider";
 import { getBookmark } from "@/lib/api";
+import { cacheGet, cacheSet } from "@/lib/offline-cache";
 import type { BookmarkDetail } from "@/lib/types";
 
 export default function BookmarkDetailPage() {
@@ -17,6 +18,7 @@ export default function BookmarkDetailPage() {
   const [data, setData] = useState<BookmarkDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [offlineCopy, setOfflineCopy] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -24,16 +26,39 @@ export default function BookmarkDetailPage() {
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setOfflineCopy(false);
     getBookmark(token, id)
       .then((d) => {
         if (cancelled) return;
         setData(d);
+        cacheSet(`bookmark:${d.id}`, d).catch(() => {
+          /* ignore caching failures */
+        });
       })
       .catch((e) => {
         if (cancelled) return;
         const message = e instanceof Error ? e.message : "Failed to load";
-        setError(message);
-        toast({ title: "Failed to load", message, variant: "error" });
+        cacheGet<BookmarkDetail>(`bookmark:${id}`)
+          .then((cached) => {
+            if (cancelled) return;
+            if (cached?.value) {
+              setData(cached.value);
+              setOfflineCopy(true);
+              toast({
+                title: "Offline copy",
+                message: "Showing a cached version of this bookmark.",
+                variant: "info",
+              });
+              return;
+            }
+            setError(message);
+            toast({ title: "Failed to load", message, variant: "error" });
+          })
+          .catch(() => {
+            if (cancelled) return;
+            setError(message);
+            toast({ title: "Failed to load", message, variant: "error" });
+          });
       })
       .finally(() => {
         if (cancelled) return;
@@ -76,6 +101,11 @@ export default function BookmarkDetailPage() {
         </div>
       ) : (
         <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-6">
+          {offlineCopy ? (
+            <div className="mb-4 rounded-lg border border-yellow-400/20 bg-yellow-500/10 p-3 text-sm text-yellow-100">
+              You’re viewing an offline cached copy.
+            </div>
+          ) : null}
           <h1 className="text-xl font-semibold">{data.title ?? data.url}</h1>
           {data.tags?.length ? (
             <div className="mt-3 flex flex-wrap gap-2">

@@ -12,6 +12,10 @@ public record BookmarkDetailDTO(
         List<String> tags,
         Integer priority,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        String snapshotStatus,
+        String snapshotObjectKey,
+        String snapshotError,
+        LocalDateTime snapshotCreatedAt
 ) {}
 
