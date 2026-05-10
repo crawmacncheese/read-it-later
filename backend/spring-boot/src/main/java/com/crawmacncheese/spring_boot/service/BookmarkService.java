@@ -27,17 +27,20 @@ public class BookmarkService {
     private final AppUserRepository appUserRepository;
     private final UrlNormalizer urlNormalizer;
     private final SnapshotStorageService snapshotStorageService;
+    private final SnapshotWorkerLauncher snapshotWorkerLauncher;
 
     public BookmarkService(
             BookmarkRepository bookmarkRepository,
             AppUserRepository appUserRepository,
             UrlNormalizer urlNormalizer,
-            SnapshotStorageService snapshotStorageService
+            SnapshotStorageService snapshotStorageService,
+            SnapshotWorkerLauncher snapshotWorkerLauncher
     ) {
         this.bookmarkRepository = bookmarkRepository;
         this.appUserRepository = appUserRepository;
         this.urlNormalizer = urlNormalizer;
         this.snapshotStorageService = snapshotStorageService;
+        this.snapshotWorkerLauncher = snapshotWorkerLauncher;
     }
 
     @Transactional
@@ -110,7 +113,60 @@ public class BookmarkService {
         b.setSnapshotError(null);
         b.setSnapshotObjectKey(null);
         b.setSnapshotCreatedAt(null);
+        
         return Optional.of(toDetailDto(bookmarkRepository.save(b)));
+    }
+
+    /**
+     * Phase 3 Part 2: request snapshot (PENDING) and asynchronously launch the Node worker.
+     * The worker will call PUT /api/v1/bookmarks/{id}/snapshot when it succeeds.
+     */
+    @Transactional
+    public Optional<BookmarkDetailDTO> requestSnapshotAndLaunch(Integer userId, Integer bookmarkId, String apiBaseUrl, String jwtToken) {
+        Optional<Bookmark> opt = bookmarkRepository.findByIdAndUserId(bookmarkId, userId);
+        if (opt.isEmpty()) return Optional.empty();
+
+        Bookmark b = opt.get();
+        snapshotStorageService.deleteIfExists(userId, bookmarkId);
+        b.setSnapshotStatus(SnapshotStatus.PENDING);
+        b.setSnapshotError(null);
+        b.setSnapshotObjectKey(null);
+        b.setSnapshotCreatedAt(null);
+        bookmarkRepository.save(b);
+
+        // Launch in background; return immediately with PENDING.
+        if (jwtToken != null && !jwtToken.isBlank()) {
+            String targetUrl = b.getOriginalUrl();
+            snapshotWorkerLauncher.launchSnapshot(apiBaseUrl, jwtToken, bookmarkId, targetUrl)
+                    .whenComplete((result, error) -> {
+                        if (error != null) {
+                            markSnapshotFailed(userId, bookmarkId, "snapshot_worker_exception: " + error.getMessage());
+                            return;
+                        }
+                        if (result != null && !result.ok()) {
+                            String msg = result.stderr() == null || result.stderr().isBlank()
+                                    ? "snapshot_worker_exit_" + result.exitCode()
+                                    : result.stderr();
+                            markSnapshotFailed(userId, bookmarkId, msg);
+                        }
+                    });
+        } else {
+            // If no token is available, fail fast so the UI gets a clear error.
+            markSnapshotFailed(userId, bookmarkId, "missing_auth_token_for_worker");
+        }
+
+        return Optional.of(toDetailDto(b));
+    }
+
+    @Transactional
+    protected void markSnapshotFailed(Integer userId, Integer bookmarkId, String message) {
+        Optional<Bookmark> opt = bookmarkRepository.findByIdAndUserId(bookmarkId, userId);
+        if (opt.isEmpty()) return;
+        Bookmark b = opt.get();
+        if (b.getSnapshotStatus() == SnapshotStatus.READY) return;
+        b.setSnapshotStatus(SnapshotStatus.FAILED);
+        b.setSnapshotError(message);
+        bookmarkRepository.save(b);
     }
 
     @Transactional

@@ -20,7 +20,7 @@ npx playwright install chromium
 API_BASE_URL="http://localhost:8080" \
 AUTH_TOKEN="YOUR_JWT_HERE" \
 BOOKMARK_ID="123" \
-SNAPSHOT_URL="https://example.com" \
+SNAPSHOT_URL="https://en.wikipedia.org/wiki/2016_NBA_draft" \
 npm run snapshot
 ```
 

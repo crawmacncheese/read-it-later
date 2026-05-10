@@ -7,10 +7,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.crawmacncheese.spring_boot.config.SnapshotProperties;
+import com.crawmacncheese.spring_boot.config.SnapshotWorkerProperties;
 import com.crawmacncheese.spring_boot.security.JwtProperties;
 
 @SpringBootApplication
-@ConfigurationPropertiesScan(basePackageClasses = { JwtProperties.class, SnapshotProperties.class })
+@ConfigurationPropertiesScan(basePackageClasses = { JwtProperties.class, SnapshotProperties.class, SnapshotWorkerProperties.class })
 @RestController
 public class BackendApplication {
 

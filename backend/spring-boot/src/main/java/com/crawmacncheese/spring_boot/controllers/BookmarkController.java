@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.crawmacncheese.spring_boot.dto.CreateBookmarkRequest;
 import com.crawmacncheese.spring_boot.dto.UpdateBookmarkRequest;
@@ -88,9 +90,15 @@ public class BookmarkController {
     }
 
     @PostMapping("{id}/snapshot")
-    public ResponseEntity<?> requestSnapshot(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer id) {
+    public ResponseEntity<?> requestSnapshot(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Integer id,
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorizationHeader
+    ) {
         Integer userId = requireUserId(userDetails);
-        return bookmarkService.requestSnapshot(userId, id)
+        String apiBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+        String token = authorizationHeader == null ? null : authorizationHeader.replaceFirst("(?i)^Bearer\\s+", "").trim();
+        return bookmarkService.requestSnapshotAndLaunch(userId, id, apiBaseUrl, token)
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found")));
     }
