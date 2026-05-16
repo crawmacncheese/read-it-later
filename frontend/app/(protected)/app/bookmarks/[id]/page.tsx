@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { useToast } from "@/components/toast-provider";
-import { getBookmark } from "@/lib/api";
+import { getBookmark, requestSnapshot } from "@/lib/api";
 import { cacheGet, cacheSet } from "@/lib/offline-cache";
 import type { BookmarkDetail } from "@/lib/types";
 
@@ -14,11 +14,14 @@ export default function BookmarkDetailPage() {
   const id = Number(params.id);
   const { token } = useAuth();
   const { toast } = useToast();
+  const maxPollingTime = 1000 * 60 * 3;
+  const pollingInterval = 1000;
 
   const [data, setData] = useState<BookmarkDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [offlineCopy, setOfflineCopy] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -69,6 +72,36 @@ export default function BookmarkDetailPage() {
     };
   }, [token, id, toast]);
 
+  const sleep = (timeout: number): Promise<void> => {
+    return new Promise((r) => setTimeout(r,timeout));
+  }
+
+  const handleSnapshotRequest = async () => {
+    if (!token) return;
+    setSubmitting(true);
+
+    try {
+      const snapshot = await requestSnapshot(token, id);
+      setData(snapshot);
+      for (let i = 0; i < maxPollingTime; i += pollingInterval) {
+        const bookmark = await getBookmark(token, id);
+        setData(bookmark);
+        console.log(bookmark.snapshotStatus);
+        console.log(bookmark.snapshotError);
+        console.log(bookmark.snapshotObjectKey);
+        console.log(bookmark.snapshotCreatedAt);
+        if (bookmark.snapshotStatus === "READY" || bookmark.snapshotStatus === "FAILED") break;
+        await sleep(pollingInterval);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to save";
+      setError(message);
+      toast({ title: "Failed to save", message, variant: "error" });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-10">
       <div className="flex items-center justify-between gap-4">
@@ -86,6 +119,40 @@ export default function BookmarkDetailPage() {
           </a>
         ) : null}
       </div>
+      <div className="mt-5 whitespace-pre-wrap text-sm leading-6 text-white/85">
+          {data?.snapshotStatus === "READY" ? 
+            <a
+            // ignore this for now. href={data. }
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-lg bg-white/10 px-3 py-1.5 text-xs hover:bg-white/15"
+          >
+            Open snapshot
+          </a>
+          : 
+          
+          data?.snapshotStatus === "FAILED" ? 
+          <div className="mt-6 rounded-xl border border-red-400/20 bg-red-500/10 p-5 text-sm text-red-200">
+            {data.snapshotError}
+            <button
+              onClick={handleSnapshotRequest}
+              type="button"
+              disabled={submitting || !token}
+              className="mt-6 w-full rounded-lg bg-white/10 px-4 py-2 text-sm hover:bg-white/15 disabled:opacity-50"
+            >
+              {submitting ? "Saving..." : "Try Again"}
+            </button>
+          </div> 
+          
+          :  (<button
+            onClick={handleSnapshotRequest}
+            type="button"
+            disabled={submitting || !token}
+            className="mt-6 w-full rounded-lg bg-white/10 px-4 py-2 text-sm hover:bg-white/15 disabled:opacity-50"
+          >
+            {submitting ? "Saving..." : "Save"}
+          </button>)}
+        </div>
 
       {loading ? (
         <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-5 text-sm text-white/70">
@@ -119,11 +186,8 @@ export default function BookmarkDetailPage() {
               ))}
             </div>
           ) : null}
-
-          <div className="mt-5 whitespace-pre-wrap text-sm leading-6 text-white/85">
-            {data.content ?? "No extracted content yet (MVP)."}
-          </div>
         </div>
+        
       )}
     </div>
   );

@@ -30,4 +30,8 @@ export type BookmarkDetail = {
   priority: number | null;
   createdAt: string;
   updatedAt: string;
+  snapshotStatus: "NONE" | "PENDING" | "READY" | "FAILED";
+  snapshotObjectKey: string | null;
+  snapshotError: string | null;
+  snapshotCreatedAt: string | null;
 };

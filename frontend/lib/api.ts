@@ -135,3 +135,14 @@ export async function deleteBookmark(token: string, id: number): Promise<void> {
   });
   if (!res.ok) throw new Error(await parseErrorMessage(res));
 }
+
+export async function requestSnapshot(token: string, id: number): Promise<BookmarkDetail> {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/bookmarks/${id}/snapshot`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
+  return res.json() as Promise<BookmarkDetail>;
+}

@@ -139,6 +139,8 @@ public class BookmarkService {
             String targetUrl = b.getOriginalUrl();
             snapshotWorkerLauncher.launchSnapshot(apiBaseUrl, jwtToken, bookmarkId, targetUrl)
                     .whenComplete((result, error) -> {
+                        System.out.println("result: " + result);
+                        System.out.println("error: " + error);
                         if (error != null) {
                             markSnapshotFailed(userId, bookmarkId, "snapshot_worker_exception: " + error.getMessage());
                             return;

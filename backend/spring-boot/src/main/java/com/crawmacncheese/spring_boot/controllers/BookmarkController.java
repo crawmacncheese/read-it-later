@@ -125,10 +125,6 @@ public class BookmarkController {
                 .body(resourceOpt.get());
     }
 
-    /**
-     * Phase 2: register a snapshot HTML file for a bookmark (used by tests and temporary worker integration).
-     * In Phase 3, the worker will call this (or write directly + update DB) instead of manual uploads.
-     */
     @PutMapping(value = "{id}/snapshot", consumes = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<?> putSnapshotHtml(
             @AuthenticationPrincipal UserDetails userDetails,

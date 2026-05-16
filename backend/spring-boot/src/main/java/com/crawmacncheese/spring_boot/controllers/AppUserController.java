@@ -66,7 +66,7 @@ public class AppUserController {
     // }
     @GetMapping("/profile")
     public ResponseEntity<AppUserDTO> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
-        System.out.println(userDetails);
+        // System.out.println(userDetails);
         if (userDetails == null) {
             // User is not authenticated
             return ResponseEntity.status(401).build(); // Unauthorized
