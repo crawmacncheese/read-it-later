@@ -146,3 +146,14 @@ export async function requestSnapshot(token: string, id: number): Promise<Bookma
   if (!res.ok) throw new Error(await parseErrorMessage(res));
   return res.json() as Promise<BookmarkDetail>;
 }
+
+export async function fetchSnapshot(token: string, id: number): Promise<string> {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/bookmarks/${id}/snapshot`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
+  return res.text();
+}
