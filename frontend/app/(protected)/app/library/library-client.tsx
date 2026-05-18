@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@/components/toast-provider";
 import { useAuth } from "@/components/auth-provider";
 import { deleteBookmark, listBookmarks } from "@/lib/api";
+import { clearBookmarkOfflineData } from "@/lib/snapshot-offline";
 import type { BookmarkListItem } from "@/lib/types";
 
 export function LibraryClient() {
@@ -55,6 +56,7 @@ export function LibraryClient() {
     setItems((xs) => xs.filter((x) => x.id !== id));
     try {
       await deleteBookmark(token, id);
+      await clearBookmarkOfflineData(id);
       toast({ title: "Deleted", variant: "info" });
     } catch (e) {
       setItems(prev);

@@ -7,6 +7,14 @@ const DB_NAME = "readitlater";
 const DB_VERSION = 1;
 const STORE = "bookmark_details";
 
+export function bookmarkCacheKey(bookmarkId: number): string {
+  return `bookmark:${bookmarkId}`;
+}
+
+export function snapshotCacheKey(bookmarkId: number): string {
+  return `snapshot:${bookmarkId}`;
+}
+
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -53,5 +61,9 @@ export async function cacheGet<T>(key: string): Promise<OfflineCacheValue<T> | n
     store.get(key)
   );
   return res ?? null;
+}
+
+export async function cacheDelete(key: string): Promise<void> {
+  await withStore("readwrite", (store) => store.delete(key));
 }
 

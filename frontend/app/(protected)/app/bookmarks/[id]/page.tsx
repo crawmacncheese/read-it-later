@@ -5,9 +5,15 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { useToast } from "@/components/toast-provider";
-import { fetchSnapshot, getBookmark, requestSnapshot } from "@/lib/api";
+import { getBookmark, requestSnapshot } from "@/lib/api";
+import { bookmarkCacheKey, cacheGet, cacheSet, snapshotCacheKey } from "@/lib/offline-cache";
+import {
+  hasCachedSnapshot,
+  loadSnapshotHtml,
+  openSnapshotHtmlInNewTab,
+  prefetchSnapshotHtml,
+} from "@/lib/snapshot-offline";
 import { pollUntilSnapshotSettled } from "@/lib/snapshot-poll";
-import { cacheGet, cacheSet } from "@/lib/offline-cache";
 import type { BookmarkDetail } from "@/lib/types";
 
 const actionBtnClass =
@@ -18,6 +24,7 @@ function SnapshotActions({
   token,
   busy,
   offlineCopy,
+  hasCachedSnapshotHtml,
   onGenerate,
   onOpen,
 }: {
@@ -25,15 +32,25 @@ function SnapshotActions({
   token: string | null;
   busy: boolean;
   offlineCopy: boolean;
+  hasCachedSnapshotHtml: boolean;
   onGenerate: () => void;
   onOpen: () => void;
 }) {
   const status = bookmark.snapshotStatus;
 
   if (offlineCopy) {
+    if (status === "READY" && hasCachedSnapshotHtml) {
+      return (
+        <button type="button" className={actionBtnClass} disabled={busy} onClick={onOpen}>
+          {busy ? "Opening…" : "Open offline snapshot"}
+        </button>
+      );
+    }
     return (
-      <span className="text-xs text-white/50" title="Snapshots need a live connection">
-        Snapshot unavailable offline
+      <span className="text-xs text-white/50" title="Generate a snapshot while online to read it offline later">
+        {status === "READY"
+          ? "Snapshot not saved for offline"
+          : "Snapshot unavailable offline"}
       </span>
     );
   }
@@ -80,6 +97,7 @@ export default function BookmarkDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [offlineCopy, setOfflineCopy] = useState(false);
   const [snapshotBusy, setSnapshotBusy] = useState(false);
+  const [hasCachedSnapshotHtml, setHasCachedSnapshotHtml] = useState(false);
 
   const pollInFlight = useRef(false);
   const pollCancelRef = useRef(false);
@@ -95,17 +113,27 @@ export default function BookmarkDetailPage() {
       .then((d) => {
         if (cancelled) return;
         setData(d);
-        cacheSet(`bookmark:${d.id}`, d).catch(() => {});
+        cacheSet(bookmarkCacheKey(d.id), d).catch(() => {});
+        if (d.snapshotStatus === "READY" && token) {
+          void prefetchSnapshotHtml(token, d.id).then((ok) => {
+            if (!cancelled && ok) setHasCachedSnapshotHtml(true);
+          });
+        }
+        void hasCachedSnapshot(d.id).then((ok) => {
+          if (!cancelled) setHasCachedSnapshotHtml(ok);
+        });
       })
       .catch((e) => {
         if (cancelled) return;
         const message = e instanceof Error ? e.message : "Failed to load";
-        cacheGet<BookmarkDetail>(`bookmark:${id}`)
-          .then((cached) => {
+        cacheGet<BookmarkDetail>(bookmarkCacheKey(id))
+          .then(async (cached) => {
             if (cancelled) return;
             if (cached?.value) {
               setData(cached.value);
               setOfflineCopy(true);
+              const snapshotOk = await hasCachedSnapshot(id);
+              if (!cancelled) setHasCachedSnapshotHtml(snapshotOk);
               toast({
                 title: "Offline copy",
                 message: "Showing a cached version of this bookmark.",
@@ -146,7 +174,13 @@ export default function BookmarkDetailPage() {
       );
 
       if (outcome === "ready") {
-        toast({ title: "Snapshot ready", variant: "success" });
+        const cached = await prefetchSnapshotHtml(token, id);
+        setHasCachedSnapshotHtml(cached);
+        toast({
+          title: "Snapshot ready",
+          message: cached ? "Saved for offline reading." : undefined,
+          variant: "success",
+        });
       } else if (outcome === "failed") {
         toast({
           title: "Snapshot failed",
@@ -197,14 +231,28 @@ export default function BookmarkDetailPage() {
   };
 
   const handleOpenSnapshot = async () => {
-    if (!token || data?.snapshotStatus !== "READY") return;
+    if (data?.snapshotStatus !== "READY") return;
+    if (!offlineCopy && !token) return;
     setSnapshotBusy(true);
     try {
-      const html = await fetchSnapshot(token, id);
-      const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-      const opened = window.open(url, "_blank", "noopener,noreferrer");
+      let html: string;
+      let source: "network" | "cache" = "cache";
+
+      if (offlineCopy) {
+        const cached = await cacheGet<string>(snapshotCacheKey(id));
+        if (!cached?.value) {
+          throw new Error("No offline snapshot saved for this bookmark");
+        }
+        html = cached.value;
+      } else {
+        const loaded = await loadSnapshotHtml(token!, id);
+        html = loaded.html;
+        source = loaded.source;
+        if (source === "network") setHasCachedSnapshotHtml(true);
+      }
+
+      const opened = openSnapshotHtmlInNewTab(html);
       if (!opened) {
-        URL.revokeObjectURL(url);
         toast({
           title: "Popup blocked",
           message: "Allow popups for this site to open the snapshot.",
@@ -212,8 +260,13 @@ export default function BookmarkDetailPage() {
         });
         return;
       }
-      // Revoke after a delay so the new tab can load the blob URL.
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      if (source === "cache") {
+        toast({
+          title: "Offline snapshot",
+          message: "Opened from local cache.",
+          variant: "info",
+        });
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not open snapshot";
       toast({ title: "Could not open snapshot", message, variant: "error" });
@@ -235,6 +288,7 @@ export default function BookmarkDetailPage() {
               token={token}
               busy={snapshotBusy}
               offlineCopy={offlineCopy}
+              hasCachedSnapshotHtml={hasCachedSnapshotHtml}
               onGenerate={() => void handleGenerateSnapshot()}
               onOpen={() => void handleOpenSnapshot()}
             />
